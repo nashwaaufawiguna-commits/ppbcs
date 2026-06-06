@@ -1,6 +1,6 @@
 # flutter_application_1
 
-A new Flutter project.
+File Aplikasi yang sudah di build ada di folder "application"
 
 ## Getting Started
 
