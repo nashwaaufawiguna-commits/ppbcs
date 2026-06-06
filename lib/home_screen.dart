@@ -26,10 +26,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  // 1. FUNGSI UNTUK MENAMBAH DATA (CREATE)
   void _addData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && _ceritaController.text.isNotEmpty) {
-      // Menyimpan data ke collection 'jurnal_mimpi'
       await _firestore.collection('jurnal_mimpi').add({
         'cerita': _ceritaController.text,
         'kategori': _kategoriTerpilih,
@@ -39,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
         'userEmail': user.email,
       });
       
-      // Reset input setelah berhasil disimpan
       _ceritaController.clear();
       setState(() {
         _kategoriTerpilih = 'Absurd';
@@ -49,6 +48,28 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Mimpi berhasil dicatat!')),
+        );
+      }
+    }
+  }
+
+  // 2. FUNGSI UNTUK MENGHAPUS DATA (DELETE)
+  void _deleteData(String docId) async {
+    try {
+      await _firestore.collection('jurnal_mimpi').doc(docId).delete();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Catatan mimpi telah dihapus!'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghapus: $e')),
         );
       }
     }
@@ -81,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 10),
             
-            // --- BAGIAN INPUT DATA ---
+            // --- INPUT FIELDS ---
             TextField(
               controller: _ceritaController,
               maxLines: 3,
@@ -146,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const Divider(height: 30, thickness: 2),
             
-            // --- BAGIAN MENAMPILKAN DATA ---
+            // --- LIST DATA FROM FIRESTORE ---
             const Text(
               'Riwayat Mimpimu:', 
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
@@ -175,6 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return ListView.builder(
                     itemCount: docs.length,
                     itemBuilder: (ctx, index) {
+                      final docId = docs[index].id; // Mengambil ID dokumen unik Firestore
                       final data = docs[index].data() as Map<String, dynamic>;
                       final timestamp = data['createdAt'] as Timestamp;
                       final date = timestamp.toDate();
@@ -198,6 +220,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           subtitle: Text(
                             'Kategori: ${data['kategori']} • ${date.day}/${date.month}/${date.year}',
                             style: const TextStyle(fontSize: 12),
+                          ),
+                          // Menambahkan tombol hapus di sebelah kanan item list
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.redAccent),
+                            onPressed: () {
+                              // Memanggil fungsi hapus dengan mengirimkan docId
+                              _deleteData(docId);
+                            },
                           ),
                         ),
                       );
